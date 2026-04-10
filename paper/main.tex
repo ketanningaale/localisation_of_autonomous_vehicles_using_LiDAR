@@ -1,0 +1,119 @@
+\documentclass[lettersize,journal]{IEEEtran}
+
+% -------------------------------------------------------
+% Core packages
+% -------------------------------------------------------
+\usepackage{amsmath,amsfonts}
+\usepackage{algorithmic}
+\usepackage{algorithm}
+\usepackage{array}
+\usepackage[caption=false,font=normalsize,labelfont=sf,textfont=sf]{subfig}
+\usepackage{textcomp}
+\usepackage{stfloats}
+\usepackage{url}
+\usepackage{verbatim}
+\usepackage{graphicx}
+\usepackage{cite}
+\usepackage{booktabs}
+\usepackage{multirow}
+\usepackage{xcolor}
+
+\graphicspath{{figures/}}
+
+\hyphenation{op-tical net-works semi-conduc-tor IEEE-Xplore lo-cal-i-sa-tion au-ton-o-mous}
+
+% -------------------------------------------------------
+\begin{document}
+% -------------------------------------------------------
+
+\title{LiDAR-Based Localisation for Autonomous Vehicles\\
+in GPS-Denied Environments Using Dynamic\\
+Derivative Analysis}
+
+\author{Ketan~Ingale,~\IEEEmembership{Student Member,~IEEE}
+\thanks{K. Ingale is with the School of Electronics and Computer Science,
+University of Southampton, Southampton SO17 1BJ, U.K.
+(e-mail: ki1g21@soton.ac.uk).}
+\thanks{This work was conducted under the supervision of Dr.\ Daniel Clark,
+School of Electronics and Computer Science, University of Southampton.}
+\thanks{Manuscript received April 2026.}}
+
+% Running headers
+\markboth{IEEE Transactions on Intelligent Vehicles,~Vol.~XX, No.~X, 2026}%
+{Ingale: LiDAR-Based Localisation for Autonomous Vehicles in GPS-Denied Environments}
+
+\maketitle
+
+% -------------------------------------------------------
+% ABSTRACT
+% -------------------------------------------------------
+\begin{abstract}
+Accurate localisation is a fundamental requirement for the safe and reliable operation of
+autonomous vehicles (AVs), yet Global Positioning System (GPS) signals remain
+unreliable or entirely unavailable in urban canyons, tunnels, and densely forested areas.
+This paper presents a novel LiDAR-based localisation framework that operates
+independently of GPS by exploiting the rich spatial structure of three-dimensional point
+cloud data. The proposed method integrates three complementary components: dynamic
+Savitzky-Golay parameter adjustment for adaptive noise suppression, first- and
+second-order derivative analysis of polar-transformed point clouds for environmental
+feature extraction, and a weighted angular-distribution sensor position estimator.
+Extensive experiments are conducted on the KITTI-CARLA benchmark dataset spanning
+seven simulated environments that cover urban, rural, and highway scenarios. The
+proposed approach is compared against four established baseline methods: K-Means
+clustering, Convex Hull estimation, Minimum Enclosing Circle, and Iterative Closest
+Point (ICP). Results demonstrate consistent improvements of 57\%--96\% in localisation
+accuracy across all environments, with average positional errors as low as 2.46~m,
+confirming the robustness and generalisability of the framework.
+\end{abstract}
+
+% -------------------------------------------------------
+% INDEX TERMS
+% -------------------------------------------------------
+\begin{IEEEkeywords}
+Autonomous vehicles, derivative analysis, GPS-denied localisation, iterative closest
+point, LiDAR, point cloud processing, Savitzky-Golay filter, sensor localisation.
+\end{IEEEkeywords}
+
+% -------------------------------------------------------
+% SECTION I -- INTRODUCTION
+% (to be added in Part 2)
+% -------------------------------------------------------
+
+% -------------------------------------------------------
+% SECTION II -- RELATED WORK
+% (to be added in Part 3)
+% -------------------------------------------------------
+
+% -------------------------------------------------------
+% SECTION III -- DATASET AND METHODOLOGY
+% (to be added in Part 4)
+% -------------------------------------------------------
+
+% -------------------------------------------------------
+% SECTION IV -- PROPOSED METHOD
+% (to be added in Part 5)
+% -------------------------------------------------------
+
+% -------------------------------------------------------
+% SECTION V -- EXPERIMENTAL RESULTS
+% (to be added in Part 6)
+% -------------------------------------------------------
+
+% -------------------------------------------------------
+% SECTION VI -- CONCLUSION
+% (to be added in Part 7)
+% -------------------------------------------------------
+
+% -------------------------------------------------------
+% REFERENCES
+% (to be finalised in Part 8)
+% -------------------------------------------------------
+\bibliographystyle{IEEEtran}
+\bibliography{references}
+
+% -------------------------------------------------------
+% AUTHOR BIOGRAPHY
+% (to be added in Part 8)
+% -------------------------------------------------------
+
+\end{document}
