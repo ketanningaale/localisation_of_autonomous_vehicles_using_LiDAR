@@ -1,0 +1,215 @@
+\documentclass[lettersize,journal]{IEEEtran}
+
+% -------------------------------------------------------
+% Core packages
+% -------------------------------------------------------
+\usepackage{amsmath,amsfonts}
+\usepackage{algorithmic}
+\usepackage{algorithm}
+\usepackage{array}
+\usepackage[caption=false,font=normalsize,labelfont=sf,textfont=sf]{subfig}
+\usepackage{textcomp}
+\usepackage{stfloats}
+\usepackage{url}
+\usepackage{verbatim}
+\usepackage{graphicx}
+\usepackage{cite}
+\usepackage{booktabs}
+\usepackage{multirow}
+\usepackage{xcolor}
+
+\graphicspath{{figures/}}
+
+\hyphenation{op-tical net-works semi-conduc-tor IEEE-Xplore lo-cal-i-sa-tion au-ton-o-mous}
+
+% -------------------------------------------------------
+\begin{document}
+% -------------------------------------------------------
+
+\title{LiDAR-Based Localisation for Autonomous Vehicles\\
+in GPS-Denied Environments Using Dynamic\\
+Derivative Analysis}
+
+\author{Ketan~Ingale,~\IEEEmembership{Student Member,~IEEE}
+\thanks{K. Ingale is with the School of Electronics and Computer Science,
+University of Southampton, Southampton SO17 1BJ, U.K.
+(e-mail: ki1g21@soton.ac.uk).}
+\thanks{This work was conducted under the supervision of Dr.\ Daniel Clark,
+School of Electronics and Computer Science, University of Southampton.}
+\thanks{Manuscript received April 2026.}}
+
+% Running headers
+\markboth{IEEE Transactions on Intelligent Vehicles,~Vol.~XX, No.~X, 2026}%
+{Ingale: LiDAR-Based Localisation for Autonomous Vehicles in GPS-Denied Environments}
+
+\maketitle
+
+% -------------------------------------------------------
+% ABSTRACT
+% -------------------------------------------------------
+\begin{abstract}
+Accurate localisation is a fundamental requirement for the safe and reliable operation of
+autonomous vehicles (AVs), yet Global Positioning System (GPS) signals remain
+unreliable or entirely unavailable in urban canyons, tunnels, and densely forested areas.
+This paper presents a novel LiDAR-based localisation framework that operates
+independently of GPS by exploiting the rich spatial structure of three-dimensional point
+cloud data. The proposed method integrates three complementary components: dynamic
+Savitzky-Golay parameter adjustment for adaptive noise suppression, first- and
+second-order derivative analysis of polar-transformed point clouds for environmental
+feature extraction, and a weighted angular-distribution sensor position estimator.
+Extensive experiments are conducted on the KITTI-CARLA benchmark dataset spanning
+seven simulated environments that cover urban, rural, and highway scenarios. The
+proposed approach is compared against four established baseline methods: K-Means
+clustering, Convex Hull estimation, Minimum Enclosing Circle, and Iterative Closest
+Point (ICP). Results demonstrate consistent improvements of 57\%--96\% in localisation
+accuracy across all environments, with average positional errors as low as 2.46~m,
+confirming the robustness and generalisability of the framework.
+\end{abstract}
+
+% -------------------------------------------------------
+% INDEX TERMS
+% -------------------------------------------------------
+\begin{IEEEkeywords}
+Autonomous vehicles, derivative analysis, GPS-denied localisation, iterative closest
+point, LiDAR, point cloud processing, Savitzky-Golay filter, sensor localisation.
+\end{IEEEkeywords}
+
+% -------------------------------------------------------
+% SECTION I -- INTRODUCTION
+% -------------------------------------------------------
+\section{Introduction}
+
+\IEEEPARstart{A}{utonomous} vehicles (AVs) represent one of the most transformative
+developments in modern transportation, promising to reduce road fatalities, alleviate
+traffic congestion, and improve mobility for those unable to drive \cite{hussain2019autonomous}.
+From simple driver-assistance features such as adaptive cruise control and lane-keeping
+to the conditional automation defined at SAE Level~3 \cite{sae2021j3016}, the field has
+advanced rapidly over the past decade. Central to this progress is the ability of an AV
+to determine its precise position and orientation within its environment---a capability
+known as \emph{localisation}. Without accurate and reliable localisation, even the most
+sophisticated perception and planning algorithms cannot guarantee safe navigation.
+
+Contemporary localisation systems rely heavily on the Global Positioning System (GPS),
+which provides metre-level accuracy under open-sky conditions
+\cite{luo2019localization}. However, GPS performance degrades significantly in
+environments where satellite signals are obstructed or reflected, including urban
+canyons formed by tall buildings, road tunnels, underground car parks, and densely
+forested rural roads \cite{schreiber2016vehicle}. In these GPS-denied or GPS-degraded
+scenarios, AVs must depend on onboard sensors to maintain continuous positional
+awareness.
+
+Light Detection and Ranging (LiDAR) sensors have emerged as a leading technology for
+GPS-independent localisation owing to their ability to generate dense, high-resolution
+three-dimensional (3D) point clouds at high frame rates \cite{kocic2018sensors}.
+Unlike cameras, LiDAR is not affected by ambient lighting conditions, and unlike Radar,
+it provides centimetre-level spatial resolution, making it well suited for detailed
+environmental mapping and feature extraction. Despite these advantages, extracting
+reliable positional estimates from raw LiDAR point clouds in diverse, unstructured
+environments remains a challenging open problem.
+
+\subsection{Limitations of Existing Approaches}
+
+Established LiDAR localisation methods can be broadly categorised into
+\emph{geometric registration} approaches and \emph{map-based matching} approaches.
+Geometric registration methods such as Iterative Closest Point (ICP)
+\cite{besl1992method}, Generalised-ICP (G-ICP) \cite{segal2009generalized}, and
+Normal Distributions Transform (NDT) \cite{biber2003normal} align successive point
+clouds to estimate relative motion. While effective in feature-rich environments, these
+methods are sensitive to initial alignment quality, prone to local minima, and
+computationally demanding for real-time deployment. Map-based methods \cite{levinson2010robust,wolcott2017robust} achieve high accuracy but require pre-built
+high-definition (HD) maps that are costly to construct and maintain, and which quickly
+become outdated in dynamic environments.
+
+Simpler geometric estimators---including K-Means centroid clustering, Convex Hull
+approximation, and Minimum Enclosing Circle fitting---offer lower computational cost
+but oversimplify the spatial distribution of point cloud data. These methods frequently
+fail to capture fine-grained environmental structure, leading to large positional errors
+in scenarios involving tight turns, path overlaps, or varying point cloud density.
+
+\subsection{Contributions}
+
+This paper addresses these limitations by proposing a novel LiDAR-only localisation
+framework that does not require HD maps, prior scene knowledge, or GPS assistance. The
+framework processes raw LiDAR point cloud data through a three-stage pipeline that
+adaptively suppresses noise, extracts meaningful environmental boundaries, and
+triangulates sensor position using angular feature density. The specific contributions
+of this work are as follows.
+
+\begin{enumerate}
+  \item \textbf{Dynamic Savitzky-Golay Adaptive Filter:} A parameter-free smoothing
+    stage that automatically selects the optimal window length and polynomial order for
+    the Savitzky-Golay filter \cite{savitzky1964smoothing} based on the noise
+    characteristics of each individual point cloud frame, preserving critical structural
+    features while suppressing measurement noise.
+
+  \item \textbf{Polar-Domain Derivative Analysis:} A novel application of first- and
+    second-order derivatives to polar-transformed LiDAR data that identifies
+    significant environmental boundaries---such as edges, corners, and surface
+    discontinuities---which serve as reliable localisation anchors across diverse
+    scene types.
+
+  \item \textbf{Weighted Angular Position Estimator:} A sensor position estimation
+    function that refines an initial geometric-centroid estimate by weighting
+    contributions from angularly dense regions of the point cloud and further
+    correcting the estimate using derivative-identified feature locations.
+
+  \item \textbf{Comprehensive Experimental Evaluation:} Systematic evaluation on the
+    KITTI-CARLA benchmark dataset across seven distinct simulated environments,
+    demonstrating improvements of 57\%--96\% in localisation accuracy over four
+    baseline methods: K-Means, Convex Hull, Minimum Enclosing Circle, and ICP.
+\end{enumerate}
+
+\subsection{Paper Organisation}
+
+The remainder of this paper is structured as follows. Section~\ref{sec:related}
+reviews related work in LiDAR-based localisation. Section~\ref{sec:dataset}
+describes the KITTI-CARLA dataset and the baseline localisation methods used for
+comparison. Section~\ref{sec:method} presents the proposed framework in detail.
+Section~\ref{sec:results} reports experimental results and analysis.
+Section~\ref{sec:conclusion} concludes the paper and outlines directions for future
+research.
+
+% -------------------------------------------------------
+% SECTION II -- RELATED WORK
+% (to be added in Part 3)
+% -------------------------------------------------------
+% Placeholder label so \ref{sec:related} resolves during incremental compilation
+\section{Related Work}\label{sec:related}
+
+% -------------------------------------------------------
+% SECTION III -- DATASET AND METHODOLOGY
+% (to be added in Part 4)
+% -------------------------------------------------------
+\section{Dataset and Baseline Methods}\label{sec:dataset}
+
+% -------------------------------------------------------
+% SECTION IV -- PROPOSED METHOD
+% (to be added in Part 5)
+% -------------------------------------------------------
+\section{Proposed Method}\label{sec:method}
+
+% -------------------------------------------------------
+% SECTION V -- EXPERIMENTAL RESULTS
+% (to be added in Part 6)
+% -------------------------------------------------------
+\section{Experimental Results}\label{sec:results}
+
+% -------------------------------------------------------
+% SECTION VI -- CONCLUSION
+% (to be added in Part 7)
+% -------------------------------------------------------
+\section{Conclusion and Future Work}\label{sec:conclusion}
+
+% -------------------------------------------------------
+% REFERENCES
+% (to be finalised in Part 8)
+% -------------------------------------------------------
+\bibliographystyle{IEEEtran}
+\bibliography{references}
+
+% -------------------------------------------------------
+% AUTHOR BIOGRAPHY
+% (to be added in Part 8)
+% -------------------------------------------------------
+
+\end{document}
