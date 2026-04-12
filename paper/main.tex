@@ -808,10 +808,106 @@ baseline.
 \end{figure}
 
 % -------------------------------------------------------
-% SECTION VI -- CONCLUSION
-% (to be added in Part 7)
+% SECTION VI -- CONCLUSION AND FUTURE WORK
 % -------------------------------------------------------
 \section{Conclusion and Future Work}\label{sec:conclusion}
+
+% ---------------------------
+\subsection{Conclusion}
+
+This paper presented a novel GPS-independent LiDAR localisation framework for
+autonomous vehicles, designed to operate reliably in environments where satellite
+positioning is unreliable or entirely unavailable. The framework processes a
+single 3D LiDAR point cloud frame through a four-stage pipeline: polar coordinate
+transformation, dynamic Savitzky-Golay adaptive smoothing, first- and
+second-order polar-domain derivative analysis, and weighted angular position
+estimation. Unlike map-based or scan-registration methods, the proposed approach
+requires no pre-built HD map, no initial pose estimate, and no inter-frame
+correspondence, making it suitable for cold-start deployment in previously
+unseen environments.
+
+Comprehensive evaluation on the KITTI-CARLA benchmark across seven
+environments---spanning dense urban, mixed suburban, and rural/highway
+scenarios---demonstrated consistent and substantial improvements over four
+established baselines. The proposed method achieved a mean Euclidean error of
+3.06~m averaged across all towns, representing improvements of 57\%--72\% over
+K-Means clustering, 87\%--90\% over Convex Hull and Minimum Enclosing Circle
+estimation, and 94\%--96\% over Iterative Closest Point registration. Critically,
+the method maintained low and stable per-frame errors throughout each town
+sequence, in contrast to ICP which suffered severe accumulated drift and the
+geometric bounding methods which exhibited persistent systematic bias.
+
+The dynamic Savitzky-Golay parameter selection proved particularly effective at
+adapting the noise suppression level to the varying density and noise
+characteristics of individual frames, while the derivative-based feature
+identification reliably located structural boundaries---edges, corners, and
+surface discontinuities---that serve as robust localisation anchors across
+diverse scene types.
+
+These results establish the proposed framework as a practical, computationally
+efficient foundation for GPS-denied localisation in autonomous vehicles, with
+relevance extending to mobile robotics, unmanned aerial vehicles, and
+infrastructure-free mapping systems.
+
+% ---------------------------
+\subsection{Limitations}
+
+The current work has several limitations that bound the scope of the results.
+First, all experiments are conducted on simulated data from the KITTI-CARLA
+dataset. Although CARLA provides high-fidelity sensor models, the gap between
+simulated and real sensor noise, weather effects, and dynamic object interference
+remains to be characterised. Second, the framework currently operates in 2D by
+projecting the point cloud onto the horizontal plane; tall or multi-level
+structures whose vertical extent is informative for localisation are therefore
+not exploited. Third, the method produces absolute position estimates in a local
+coordinate frame but does not accumulate these estimates into a globally
+consistent trajectory, meaning long-term drift correction is not addressed.
+
+% ---------------------------
+\subsection{Future Work}
+
+Several directions offer promising opportunities to extend this work.
+
+\textbf{Real-world validation.} The most immediate priority is evaluation on
+real LiDAR datasets such as the original KITTI odometry benchmark
+\cite{geiger2012kitti} and the nuScenes dataset, which include real sensor
+noise, dynamic agents, and varying weather conditions. Such evaluation will
+reveal whether the performance gains observed in simulation transfer to
+practical deployment.
+
+\textbf{3D extension.} Extending the derivative analysis to the full 3D point
+cloud by operating in spherical coordinates $(r, \theta, \phi)$ would allow
+the framework to exploit vertical structural information---particularly useful
+in multi-storey urban environments and underground car parks where horizontal
+projections are ambiguous.
+
+\textbf{Temporal fusion and trajectory estimation.} Integrating successive
+single-frame position estimates via a Kalman filter or particle filter would
+suppress frame-to-frame noise and enable globally consistent trajectory
+estimation. Coupling this with wheel odometry or IMU data would further
+improve robustness during featureless stretches such as long straight
+highways.
+
+\textbf{Sensor fusion.} Fusing LiDAR-derived position estimates with
+camera-based semantic landmarks, radar returns, and GPS when available
+would create a resilient multi-modal localisation system that degrades
+gracefully as individual sensors fail or become unreliable.
+
+\textbf{Deep learning integration.} Learned feature detectors trained on
+large-scale LiDAR datasets could replace the hand-crafted derivative-based
+feature extractor, potentially improving robustness to sensor noise and
+point cloud sparsity. A hybrid approach---using learned features for
+initial coarse localisation and derivative analysis for refinement---is
+a particularly promising direction.
+
+% ---------------------------
+\section*{Acknowledgment}
+
+The author would like to thank Dr.\ Daniel Clark for his guidance and
+constructive feedback throughout this research, and Dr.\ Luis-Daniel
+Ib\'{a}\~{n}ez for his valuable review comments. This work was carried
+out within the School of Electronics and Computer Science at the
+University of Southampton.
 
 % -------------------------------------------------------
 % REFERENCES
