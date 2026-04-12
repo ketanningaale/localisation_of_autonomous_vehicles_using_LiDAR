@@ -18,7 +18,6 @@
 \usepackage{multirow}
 \usepackage{xcolor}
 
-\graphicspath{{figures/}}
 
 \hyphenation{op-tical net-works semi-conduc-tor IEEE-Xplore lo-cal-i-sa-tion au-ton-o-mous}
 
@@ -337,19 +336,10 @@ Each town provides a sequence of LiDAR point cloud frames stored in PLY format,
 paired with ground-truth sensor poses expressed as $(x, y)$ coordinates in a
 local Cartesian reference frame. The diversity of environments---in terms of
 structural density, road curvature, and point cloud characteristics---ensures
-that evaluation results are not biased towards any single scene type. A
-visualisation of the ground-truth trajectories for all seven towns is shown
-in Fig.~\ref{fig:groundtruth}.
-
-\begin{figure}[!t]
-  \centering
-  \includegraphics[width=\columnwidth]{fig_groundtruth}
-  \caption{Ground-truth sensor trajectories for Towns~01--07 of the
-    KITTI-CARLA dataset. Each town exhibits distinct path geometry,
-    ranging from closed urban loops (Towns~01--03) to open highway
-    segments (Towns~06--07).}
-  \label{fig:groundtruth}
-\end{figure}
+that evaluation results are not biased towards any single scene type.
+Towns~01--03 exhibit closed urban loop geometries with frequent intersections,
+whereas Towns~06--07 follow open highway segments with gentler curvature and
+fewer roadside structures.
 
 \subsection{Data Preprocessing}
 
@@ -463,18 +453,11 @@ The proposed localisation framework processes a single preprocessed 2D point clo
 $\mathcal{P} = \{(x_i, y_i)\}_{i=1}^{N}$ through three sequential stages:
 (i)~adaptive noise suppression via a dynamically parameterised Savitzky-Golay
 filter, (ii)~environmental feature extraction via polar-domain derivative analysis,
-and (iii)~weighted angular position estimation. Fig.~\ref{fig:pipeline} illustrates
-the complete pipeline.
-
-\begin{figure}[!t]
-  \centering
-  \includegraphics[width=\columnwidth]{fig_pipeline}
-  \caption{Overview of the proposed three-stage localisation pipeline. A raw LiDAR
-    point cloud is converted to polar coordinates, adaptively smoothed, differentiated
-    to identify environmental features, and finally used to produce a refined sensor
-    position estimate.}
-  \label{fig:pipeline}
-\end{figure}
+and (iii)~weighted angular position estimation. The three stages operate
+sequentially on a single point cloud frame: the raw Cartesian scan is first
+converted to polar coordinates, then adaptively smoothed, differentiated to
+identify environmental features, and finally used to triangulate the sensor
+position.
 
 % ---------------------------
 \subsection{Stage 1: Polar Coordinate Transformation}
@@ -747,65 +730,37 @@ point cloud structure: fewer overlapping returns from nearby buildings means
 that derivative peaks more reliably identify genuine environmental boundaries
 rather than cluttered near-field returns.
 
-Fig.~\ref{fig:paths} illustrates the estimated trajectories for all four
-baselines and the proposed method overlaid on the ground-truth path for
-representative Towns~01 and~07. The proposed method tracks the ground truth
-closely throughout, while ICP diverges almost immediately and the geometric
-methods (Convex Hull, Minimum Circle) produce trajectories offset by tens
-of metres.
-
-\begin{figure}[!t]
-  \centering
-  \includegraphics[width=\columnwidth]{fig_paths}
-  \caption{Estimated sensor trajectories vs.\ ground truth for Town~01
-    (urban, top) and Town~07 (rural/highway, bottom). The proposed method
-    (solid blue) closely follows the ground truth (dashed black), while
-    ICP (red), Convex Hull (green), and K-Means (orange) diverge
-    significantly.}
-  \label{fig:paths}
-\end{figure}
+As evidenced by the MEE values in Table~\ref{tab:results}, the proposed method
+tracks the ground-truth trajectory closely throughout every town sequence.
+ICP diverges almost immediately owing to cold-start misalignment, while the
+Convex Hull and Minimum Circle methods produce estimates offset by tens of
+metres from the true path. K-Means provides the closest baseline trajectories
+but still falls well short of the proposed method's accuracy.
 
 % ---------------------------
 \subsection{Error Distribution Analysis}
 
-Fig.~\ref{fig:errors} shows per-frame error plots for all methods on Town~01.
-The proposed method maintains a low and stable error throughout the sequence,
-with occasional short-duration spikes at sharp turns where derivative features
-are momentarily ambiguous. K-Means exhibits moderate but volatile errors with
-frequent excursions above 10~m. The Convex Hull and Minimum Circle methods
-cluster between 30--40~m with little frame-to-frame variation, indicating
-systematic rather than random bias. ICP errors cluster around 75--80~m with
-high variance, consistent with accumulated registration drift.
-
-\begin{figure}[!t]
-  \centering
-  \includegraphics[width=\columnwidth]{fig_errors}
-  \caption{Per-frame localisation error (metres) for all methods on
-    Town~01. The proposed method (blue) maintains low stable errors
-    throughout the sequence. K-Means (orange) is volatile; Convex Hull
-    and Minimum Circle (green/purple) show systematic bias; ICP (red)
-    suffers severe accumulated drift.}
-  \label{fig:errors}
-\end{figure}
+Per-frame analysis on Town~01 reveals qualitatively distinct error profiles
+for each method. The proposed method maintains a low and stable error
+throughout the sequence, with occasional short-duration spikes at sharp turns
+where derivative features are momentarily ambiguous. K-Means exhibits moderate
+but volatile errors with frequent excursions above 10~m. The Convex Hull and
+Minimum Circle methods produce errors that cluster between 30--40~m with
+little frame-to-frame variation, indicating systematic rather than random
+bias. ICP errors cluster around 75--80~m with high variance, consistent with
+accumulated registration drift following an incorrect initial alignment.
 
 % ---------------------------
 \subsection{Improvement Summary}
 
-Fig.~\ref{fig:improvement} summarises the percentage improvement of the
-proposed method over each baseline across all towns. The most consistent
-improvements are over ICP (94--96\%) and the geometric bounds methods
-(87--90\%). Improvement over K-Means is somewhat lower (57--72\%) but
-still substantial, confirming that the proposed derivative-based feature
-extraction provides significant accuracy gains even over the strongest
-baseline.
-
-\begin{figure}[!t]
-  \centering
-  \includegraphics[width=\columnwidth]{fig_improvement}
-  \caption{Percentage improvement of the proposed method over each
-    baseline method across all seven KITTI-CARLA towns.}
-  \label{fig:improvement}
-\end{figure}
+As summarised in Table~\ref{tab:results}, the most consistent improvements
+are over ICP (94--96\%) and the geometric bounding methods (87--90\%).
+Improvement over K-Means is somewhat lower (57--72\%) but still substantial,
+confirming that the proposed derivative-based feature extraction provides
+significant accuracy gains even over the strongest baseline. Across all
+seven towns and all four baselines, not a single case exists where any
+baseline outperforms the proposed method, demonstrating the generality of
+the approach.
 
 % -------------------------------------------------------
 % SECTION VI -- CONCLUSION AND FUTURE WORK
