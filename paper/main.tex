@@ -456,9 +456,195 @@ defined as:
 
 % -------------------------------------------------------
 % SECTION IV -- PROPOSED METHOD
-% (to be added in Part 5)
 % -------------------------------------------------------
 \section{Proposed Method}\label{sec:method}
+
+The proposed localisation framework processes a single preprocessed 2D point cloud
+$\mathcal{P} = \{(x_i, y_i)\}_{i=1}^{N}$ through three sequential stages:
+(i)~adaptive noise suppression via a dynamically parameterised Savitzky-Golay
+filter, (ii)~environmental feature extraction via polar-domain derivative analysis,
+and (iii)~weighted angular position estimation. Fig.~\ref{fig:pipeline} illustrates
+the complete pipeline.
+
+\begin{figure}[!t]
+  \centering
+  \includegraphics[width=\columnwidth]{fig_pipeline}
+  \caption{Overview of the proposed three-stage localisation pipeline. A raw LiDAR
+    point cloud is converted to polar coordinates, adaptively smoothed, differentiated
+    to identify environmental features, and finally used to produce a refined sensor
+    position estimate.}
+  \label{fig:pipeline}
+\end{figure}
+
+% ---------------------------
+\subsection{Stage 1: Polar Coordinate Transformation}
+
+The Cartesian point set $\mathcal{P}$ is first converted to a polar representation
+centred on the geometric mean $\bar{\mathbf{p}} = (\bar{x}, \bar{y})$:
+\begin{equation}
+  r_i = \sqrt{(x_i - \bar{x})^2 + (y_i - \bar{y})^2}, \quad
+  \theta_i = \operatorname{atan2}(y_i - \bar{y},\; x_i - \bar{x}),
+  \label{eq:polar}
+\end{equation}
+yielding the polar set $\mathcal{Q} = \{(r_i, \theta_i)\}_{i=1}^{N}$.
+The data is then sorted by $\theta_i$ in ascending order to produce a
+continuously ordered angular sequence, which is a prerequisite for
+meaningful derivative computation in the next stage.
+
+% ---------------------------
+\subsection{Stage 2: Dynamic Savitzky-Golay Adaptive Smoothing}
+
+Raw LiDAR returns contain measurement noise that, if uncorrected, causes spurious
+extrema in derivative signals and corrupts feature detection. The Savitzky-Golay
+filter \cite{savitzky1964smoothing} smooths a discrete sequence by fitting
+overlapping polynomial windows via least squares, preserving signal shape
+characteristics such as local maxima and minima. For a window of length $w$
+and polynomial order $d$, the smoothed value at position $i$ is:
+\begin{equation}
+  \tilde{s}_i = \sum_{j=-m}^{m} c_j\, s_{i+j}, \qquad m = \tfrac{w-1}{2},
+  \label{eq:savgol}
+\end{equation}
+where $c_j$ are the Savitzky-Golay convolution coefficients determined by the
+least-squares polynomial fit and $s_i \in \{r_i, \theta_i\}$.
+
+\textbf{Dynamic parameter selection.} The key limitation of the standard
+Savitzky-Golay filter is that the window length $w$ and polynomial order $d$
+must be chosen in advance. Fixed parameters that suit one frame may over-smooth
+structural features or under-suppress noise in another. To address this, we
+introduce an automatic parameter optimisation procedure that selects $w^*$ and
+$d^*$ independently for each frame by minimising the mean squared error (MSE)
+between the smoothed signal and the original:
+\begin{equation}
+  (w^*, d^*) = \underset{w \in \mathcal{W},\; d \in \{2,3,4\}}{\arg\min}\;
+  \frac{1}{N} \sum_{i=1}^{N} \bigl(\tilde{s}_i^{(w,d)} - s_i\bigr)^2,
+  \label{eq:dynparam}
+\end{equation}
+where $\mathcal{W} = \{11, 13, 15, \ldots, w_{\max}\}$ is the set of odd window
+lengths up to a maximum $w_{\max}$ (set to $\min(51, N)$ in practice to avoid
+over-smoothing small point clouds). This optimisation is performed separately
+for both the radial sequence $\{r_i\}$ and the angular sequence $\{\theta_i\}$,
+yielding two independently tuned filters. Algorithm~\ref{alg:dynsg} summarises
+the procedure.
+
+\begin{algorithm}[!t]
+\caption{Dynamic Savitzky-Golay Parameter Selection}
+\label{alg:dynsg}
+\begin{algorithmic}
+\STATE \textbf{Input:} signal $\{s_i\}_{i=1}^{N}$, max window $w_{\max}$
+\STATE \textbf{Output:} optimal window $w^*$, polynomial order $d^*$
+\STATE $\text{best\_MSE} \leftarrow \infty$
+\FOR{each odd $w \in \{11, 13, \ldots, w_{\max}\}$}
+  \FOR{$d \in \{2, 3, 4\}$}
+    \STATE Apply Savitzky-Golay filter: $\tilde{s}_i \leftarrow \text{SG}(s, w, d)$
+    \STATE $\text{MSE} \leftarrow \frac{1}{N}\sum_i (\tilde{s}_i - s_i)^2$
+    \IF{$\text{MSE} < \text{best\_MSE}$}
+      \STATE $\text{best\_MSE} \leftarrow \text{MSE};\quad w^* \leftarrow w;\quad d^* \leftarrow d$
+    \ENDIF
+  \ENDFOR
+\ENDFOR
+\RETURN $w^*,\; d^*$
+\end{algorithmic}
+\end{algorithm}
+
+% ---------------------------
+\subsection{Stage 3: Polar-Domain Derivative Analysis}
+
+With the smoothed radial and angular sequences $\{\tilde{r}_i\}$ and
+$\{\tilde{\theta}_i\}$ in hand, we compute first- and second-order finite
+differences to locate regions of significant environmental change.
+
+\subsubsection{First-Order Derivatives}
+
+The first-order derivatives quantify the rate of change of range and angle
+with respect to the sorted sample index $i$:
+\begin{equation}
+  r'_i = \frac{\tilde{r}_{i+1} - \tilde{r}_{i-1}}{2}, \qquad
+  \theta'_i = \frac{\tilde{\theta}_{i+1} - \tilde{\theta}_{i-1}}{2}.
+  \label{eq:first_deriv}
+\end{equation}
+Large magnitudes in $|r'_i|$ indicate abrupt changes in measured range,
+corresponding to surface discontinuities such as building edges, kerbs, and
+vegetation boundaries.
+
+\subsubsection{Second-Order Derivatives}
+
+The second-order derivatives detect inflection points and regions of rapidly
+accelerating change, which correspond to corners and concave features:
+\begin{equation}
+  r''_i = \tilde{r}_{i+1} - 2\tilde{r}_i + \tilde{r}_{i-1}, \qquad
+  \theta''_i = \tilde{\theta}_{i+1} - 2\tilde{\theta}_{i} + \tilde{\theta}_{i-1}.
+  \label{eq:second_deriv}
+\end{equation}
+
+\subsubsection{Angular Wrap-Around Correction}
+
+Because $\theta \in (-\pi, \pi]$ is a cyclic variable, naive finite differences
+produce spurious large values at the $\pm\pi$ boundary. A correction is applied
+wherever $|\theta'_i| > \pi$:
+\begin{equation}
+  \theta'_i \leftarrow \theta'_i - 2\pi \cdot \operatorname{sign}(\theta'_i),
+  \label{eq:wraparound}
+\end{equation}
+ensuring derivative continuity across the angular wrap-around.
+
+% ---------------------------
+\subsection{Stage 4: Weighted Angular Position Estimation}
+
+The final stage fuses the geometric centre, the angular density distribution,
+and the derivative feature map into a refined sensor position estimate through
+three successive refinement steps.
+
+\textbf{Step 1 — Geometric centroid initialisation.}
+An initial position estimate is computed as the mean of all point coordinates:
+\begin{equation}
+  \hat{\mathbf{p}}^{(0)} = \frac{1}{N} \sum_{i=1}^{N} (x_i, y_i).
+  \label{eq:centroid}
+\end{equation}
+
+\textbf{Step 2 — Angular density refinement.}
+The angular distribution $\{\theta_i\}$ is discretised into a histogram
+$H(\phi)$ with bin width $\Delta\phi = 5°$. Peaks in $H(\phi)$ identify
+angular directions where point cloud returns are most densely concentrated,
+corresponding to nearby planar surfaces such as walls or building facades.
+The position estimate is shifted towards the weighted mean of these dominant
+angular directions:
+\begin{equation}
+  \hat{\mathbf{p}}^{(1)} = \hat{\mathbf{p}}^{(0)} +
+  \alpha \sum_{k \in \mathcal{K}}
+  H(\phi_k) \begin{pmatrix} \cos\phi_k \\ \sin\phi_k \end{pmatrix},
+  \label{eq:angularshift}
+\end{equation}
+where $\mathcal{K}$ is the set of peak bin indices and $\alpha$ is a
+normalisation constant scaled by the total point count.
+
+\textbf{Step 3 — Derivative-based feature correction.}
+Points with high combined derivative magnitude:
+\begin{equation}
+  D_i = |r'_i| + |r''_i| + |\theta'_i| + |\theta''_i|
+  \label{eq:deriv_magnitude}
+\end{equation}
+are identified as environmental feature anchors (edges, corners,
+discontinuities). The top $\kappa = 10\%$ of points ranked by $D_i$ form
+the feature set $\mathcal{F}$. The final estimate is computed as the
+weighted centroid of $\mathcal{F}$, with weights proportional to $D_i$:
+\begin{equation}
+  \hat{\mathbf{p}}^{(2)} = \frac{\sum_{i \in \mathcal{F}} D_i\, (x_i, y_i)}
+                                 {\sum_{i \in \mathcal{F}} D_i}.
+  \label{eq:featurecentroid}
+\end{equation}
+The output $\hat{\mathbf{p}}^{(2)}$ is the final sensor position estimate
+returned by the framework.
+
+% ---------------------------
+\subsection{Computational Complexity}
+
+The dominant cost is the dynamic parameter search in Stage~2. For a point cloud
+of $N$ points, $|\mathcal{W}|$ candidate window lengths, and three polynomial
+orders, the complexity is $O(|\mathcal{W}| \cdot N)$ per signal. Sorting in
+Stage~1 costs $O(N \log N)$, and all derivative and estimation steps are $O(N)$.
+The total per-frame complexity is therefore $O(|\mathcal{W}| \cdot N)$, which is
+linear in $N$ for a fixed search grid---substantially cheaper than the iterative
+$O(N^2)$ worst-case cost of ICP.
 
 % -------------------------------------------------------
 % SECTION V -- EXPERIMENTAL RESULTS
