@@ -171,22 +171,480 @@ research.
 
 % -------------------------------------------------------
 % SECTION II -- RELATED WORK
-% (to be added in Part 3)
 % -------------------------------------------------------
-% Placeholder label so \ref{sec:related} resolves during incremental compilation
 \section{Related Work}\label{sec:related}
 
+Localisation for autonomous vehicles has been studied extensively across a range of
+sensor modalities. This section reviews the most relevant prior work, organised by
+sensing approach, and identifies the gaps that motivate the proposed method.
+
+% ---------------------------
+\subsection{LiDAR-Based Localisation}
+
+LiDAR sensors have been a cornerstone of autonomous vehicle research since the
+DARPA Urban Challenge \cite{hussain2019autonomous}, owing to their ability to
+generate dense, geometrically accurate 3D point clouds independent of lighting
+conditions. The most widely adopted LiDAR localisation algorithms are built on
+point-cloud registration.
+
+\textit{Iterative Closest Point (ICP)} \cite{besl1992method} estimates the rigid
+transformation between successive scans by iteratively minimising the sum of
+squared distances between corresponding points. Although accurate in
+feature-rich environments, ICP is susceptible to local minima, sensitive to
+the quality of the initial alignment estimate, and computationally expensive
+for dense point clouds. \textit{Generalised-ICP (G-ICP)} \cite{segal2009generalized}
+extends ICP by modelling each point as a Gaussian distribution, improving robustness
+to noise but increasing computational cost. \textit{Normal Distributions Transform
+(NDT)} \cite{biber2003normal} represents the environment as a set of Gaussian
+distributions on a voxel grid and aligns scans by maximising the likelihood of
+observed points. Takeuchi and Tsubouchi \cite{takeuchi2006scan} extended NDT to 3D,
+while Akai~\textit{et al.} \cite{akai2017robust} incorporated experimentally
+determined scan uncertainty to further improve robustness.
+
+Map-matching approaches represent a complementary strategy. Levinson and
+Thrun \cite{levinson2010robust} demonstrated precise urban localisation by matching
+intensity measurements against a pre-built probabilistic map. Wolcott and
+Eustice \cite{wolcott2017robust} employed multiresolution Gaussian mixture models,
+achieving sub-metre accuracy across diverse weather conditions. Burgard
+\textit{et al.} \cite{burgard2008map} proposed a map-based framework tailored
+to urban environments by exploiting permanent structural features. Although effective,
+all map-based methods require costly offline map construction and are vulnerable to
+map staleness in dynamic environments.
+
+Yoneda \textit{et al.} \cite{yoneda2014lidar} demonstrated that matching salient
+scan features against a high-precision 3D map yields accurate localisation but noted
+that performance degrades in feature-sparse scenarios such as open highways.
+Im~\textit{et al.} \cite{im2016vertical,im2018extended} proposed vertical corner
+and line map representations to reduce map size while maintaining localisation
+accuracy in urban areas. Li~\textit{et al.} \cite{li2018hybrid} introduced a hybrid
+filtering framework that combines particle filtering with LiDAR scan matching,
+improving robustness in industrial environments with repetitive structure.
+
+In contrast to these methods, the proposed framework requires no pre-built map,
+no initial pose estimate, and no iterative scan registration, instead extracting
+position directly from the spatial statistics of a single point cloud frame.
+
+% ---------------------------
+\subsection{GPS and Inertial Navigation}
+
+GPS remains the dominant positioning technology for outdoor vehicles due to its
+global coverage and ease of integration \cite{luo2019localization}. However,
+multipath effects and signal blockage in urban environments, tunnels, and under
+dense tree cover severely degrade GPS accuracy \cite{schreiber2016vehicle}.
+Inertial Navigation Systems (INS), based on accelerometers and gyroscopes, can
+bridge short GPS outages through dead-reckoning but suffer from unbounded drift
+accumulation over time \cite{wang2016accurate}. Tightly-coupled GPS/INS fusion
+partially mitigates this by continuously correcting inertial drift, yet the
+fundamental dependence on satellite availability persists.
+
+Aldibaja \textit{et al.} \cite{aldibaja2017robust} demonstrated intensity-based
+LiDAR localisation as a GPS substitute on snow-wet road surfaces, highlighting
+LiDAR's particular advantage in adverse weather and motivating the GPS-free
+philosophy adopted in this paper.
+
+% ---------------------------
+\subsection{Radar and Vision-Based Approaches}
+
+Radar-based localisation has attracted growing interest due to its robustness in
+adverse weather. Ward and Folkesson \cite{ward2016vehicle} demonstrated localisation
+using low-cost automotive radar, while Gwon~\textit{et al.} \cite{gwon2017generation}
+generated lane-level road maps suitable for radar-based guidance. However, radar
+provides significantly lower spatial resolution than LiDAR, limiting its ability to
+resolve fine environmental structure.
+
+Vision-based localisation leverages the rich semantic content of camera images for
+place recognition, lane detection, and landmark matching \cite{sun2006on}. While
+camera systems offer high resolution at low cost, their performance is highly sensitive
+to illumination changes, lens soiling, and adverse weather---conditions under which
+LiDAR continues to operate reliably.
+
+% ---------------------------
+\subsection{Point Cloud Filtering and Feature Extraction}
+
+Preprocessing raw LiDAR data is a critical step in any localisation pipeline.
+The Savitzky-Golay filter \cite{savitzky1964smoothing}, originally developed for
+analytical chemistry, has been adopted in robotics and sensor signal processing for
+its ability to smooth discrete noisy sequences while preserving relative maxima,
+minima, and overall signal shape---properties essential for maintaining the geometric
+fidelity of LiDAR returns. Crucially, the selection of window length and polynomial
+order governs the trade-off between noise suppression and feature preservation; fixed
+parameters inevitably mismatch the noise characteristics of individual frames in
+dynamic driving scenarios. The proposed method addresses this by dynamically
+optimising these parameters on a per-frame basis using mean squared error minimisation.
+
+% ---------------------------
+\subsection{Summary and Positioning}
+
+Table~\ref{tab:related} summarises the key characteristics of representative
+localisation methods. The proposed approach occupies a distinct niche: it is
+map-free, GPS-independent, registration-free, and operates on a single point cloud
+frame without any prior scene information.
+
+\begin{table}[!t]
+\caption{Comparison of Representative Localisation Methods\label{tab:related}}
+\centering
+\renewcommand{\arraystretch}{1.2}
+\begin{tabular}{lcccc}
+\toprule
+\textbf{Method} & \textbf{Map-free} & \textbf{GPS-free} & \textbf{Reg.-free}
+  & \textbf{Single-frame} \\
+\midrule
+ICP \cite{besl1992method}              & \checkmark & \checkmark &            &            \\
+NDT \cite{biber2003normal}             & \checkmark & \checkmark &            &            \\
+Map-matching \cite{levinson2010robust} &            & \checkmark &            &            \\
+GPS/INS \cite{wang2016accurate}        & \checkmark &            & \checkmark & \checkmark \\
+Radar \cite{ward2016vehicle}           & \checkmark & \checkmark &            &            \\
+\textbf{Proposed}                      & \checkmark & \checkmark & \checkmark & \checkmark \\
+\bottomrule
+\end{tabular}
+\end{table}
+
 % -------------------------------------------------------
-% SECTION III -- DATASET AND METHODOLOGY
-% (to be added in Part 4)
+% SECTION III -- DATASET AND BASELINE METHODS
 % -------------------------------------------------------
 \section{Dataset and Baseline Methods}\label{sec:dataset}
 
+This section describes the benchmark dataset used for evaluation and provides
+a concise formulation of the four baseline localisation methods against which
+the proposed framework is compared.
+
+% ---------------------------
+\subsection{The KITTI-CARLA Dataset}
+
+Experiments are conducted on the \textit{KITTI-CARLA} dataset
+\cite{geiger2012kitti, dosovitskiy2017carla}, a synthetic benchmark that combines
+the data format and annotation conventions of the KITTI vision benchmark
+\cite{geiger2012kitti} with scenes generated by the CARLA open-source urban
+driving simulator \cite{dosovitskiy2017carla}. CARLA provides physically realistic
+sensor models, including a 64-beam LiDAR sensor that generates dense point clouds
+at 10~Hz, and produces ground-truth pose information with millimetre-level
+precision---enabling rigorous quantitative evaluation of localisation accuracy.
+
+The dataset spans \textbf{seven distinct environments} (Town~01 through Town~07),
+each representing a different type of driving scenario:
+
+\begin{itemize}
+  \item \textit{Towns~01--03}: Urban environments with multi-lane roads,
+    intersections, roundabouts, and dense roadside infrastructure.
+  \item \textit{Towns~04--05}: Mixed environments combining urban districts
+    with open suburban roads and varying building density.
+  \item \textit{Towns~06--07}: Rural and highway-style environments with
+    fewer structural landmarks, wider lane separations, and reduced point
+    cloud density.
+\end{itemize}
+
+Each town provides a sequence of LiDAR point cloud frames stored in PLY format,
+paired with ground-truth sensor poses expressed as $(x, y)$ coordinates in a
+local Cartesian reference frame. The diversity of environments---in terms of
+structural density, road curvature, and point cloud characteristics---ensures
+that evaluation results are not biased towards any single scene type. A
+visualisation of the ground-truth trajectories for all seven towns is shown
+in Fig.~\ref{fig:groundtruth}.
+
+\begin{figure}[!t]
+  \centering
+  \includegraphics[width=\columnwidth]{fig_groundtruth}
+  \caption{Ground-truth sensor trajectories for Towns~01--07 of the
+    KITTI-CARLA dataset. Each town exhibits distinct path geometry,
+    ranging from closed urban loops (Towns~01--03) to open highway
+    segments (Towns~06--07).}
+  \label{fig:groundtruth}
+\end{figure}
+
+\subsection{Data Preprocessing}
+
+Prior to applying any localisation method, each raw PLY point cloud undergoes
+two preprocessing steps common to all methods evaluated in this work.
+
+\textit{Outlier removal:} Statistical outlier filtering is applied using an
+Isolation Forest model to identify and discard points whose Euclidean distance
+from the local neighbourhood mean exceeds three standard deviations. This step
+removes spurious returns caused by dust particles, sensor noise, and distant
+reflections that carry no useful structural information.
+
+\textit{Coordinate projection:} The 3D point cloud $(x, y, z)$ is projected
+onto the horizontal plane by discarding the $z$-component, yielding a 2D
+point set $\mathcal{P} = \{(x_i, y_i)\}_{i=1}^{N}$ suitable for planar
+localisation. This is consistent with standard practice in urban driving,
+where lateral positioning is the primary concern.
+
+% ---------------------------
+\subsection{Baseline Localisation Methods}
+
+Four geometric baseline methods are evaluated. All operate on the same
+preprocessed 2D point set $\mathcal{P}$ described above and produce a
+scalar position estimate $\hat{\mathbf{p}} = (\hat{x}, \hat{y})$.
+
+\subsubsection{K-Means Centroid (K-Means Path)}
+
+K-Means clustering \cite{kocic2018sensors} partitions $\mathcal{P}$ into
+$k$ clusters by iteratively minimising the within-cluster sum of squared
+Euclidean distances. The sensor position is estimated as the centroid of
+the largest cluster, on the assumption that the densest spatial cluster
+corresponds to the region nearest the sensor:
+\begin{equation}
+  \hat{\mathbf{p}}_{\text{KM}} = \frac{1}{|\mathcal{C}^*|}
+  \sum_{(x_i,y_i) \in \mathcal{C}^*} (x_i,\, y_i),
+  \label{eq:kmeans}
+\end{equation}
+where $\mathcal{C}^*$ denotes the largest cluster. In this study $k{=}3$
+is used, chosen empirically to balance cluster granularity and stability.
+K-Means offers low computational cost but is sensitive to initialisation
+and to the uneven spatial distribution of LiDAR returns, particularly
+in open environments.
+
+\subsubsection{Convex Hull Centroid (Convex Hull Path)}
+
+The convex hull of $\mathcal{P}$ is the smallest convex polygon enclosing
+all points. The sensor position is estimated as the centroid of this polygon:
+\begin{equation}
+  \hat{\mathbf{p}}_{\text{CH}} = \frac{1}{M}
+  \sum_{j=1}^{M} \mathbf{v}_j,
+  \label{eq:convexhull}
+\end{equation}
+where $\mathbf{v}_1, \ldots, \mathbf{v}_M$ are the $M$ vertices of the
+convex hull. While robust to noise by construction, the convex hull
+oversimplifies complex, non-convex environments and is insensitive to the
+internal distribution of points, leading to systematic bias in scenarios
+with asymmetric point density.
+
+\subsubsection{Minimum Enclosing Circle (Minimum Circle Path)}
+
+The minimum enclosing circle (MEC) is the smallest circle that contains all
+points in $\mathcal{P}$. The sensor position is taken as its centre
+$\hat{\mathbf{p}}_{\text{MEC}} = (c_x, c_y)$, computed via Welzl's
+algorithm in expected $O(N)$ time. Like the convex hull, the MEC is
+dominated by the most distant outlier points and fails to exploit the
+density distribution of returns, producing estimates that mirror the
+convex hull errors in curvature-rich scenes.
+
+\subsubsection{Iterative Closest Point (ICP Path)}
+
+ICP \cite{besl1992method} estimates the rigid transformation
+$(\mathbf{R}, \mathbf{t})$ that aligns the current point cloud
+$\mathcal{P}_t$ to a reference cloud $\mathcal{P}_{t-1}$ by minimising:
+\begin{equation}
+  E(\mathbf{R}, \mathbf{t}) =
+  \sum_{i} \bigl\| \mathbf{R}\,\mathbf{p}_i^{(t)} + \mathbf{t}
+  - \mathbf{q}_i^{(t-1)} \bigr\|^2,
+  \label{eq:icp}
+\end{equation}
+where $\mathbf{q}_i^{(t-1)}$ is the closest point in $\mathcal{P}_{t-1}$ to the
+transformed point $\mathbf{R}\,\mathbf{p}_i^{(t)} + \mathbf{t}$. The accumulated
+translation vector is used to update the global position estimate. ICP is the most
+sophisticated of the four baselines but is the most sensitive to initialisation
+quality: a poor initial alignment causes convergence to a local minimum, resulting
+in large positional errors that propagate across frames.
+
+\subsection{Evaluation Metric}
+
+All methods are evaluated using the \textit{mean Euclidean error} (MEE) between
+the estimated sensor position $\hat{\mathbf{p}}$ and the ground-truth position
+$\mathbf{p}^*$ across all $T$ frames in a town sequence:
+\begin{equation}
+  \text{MEE} = \frac{1}{T} \sum_{t=1}^{T}
+  \bigl\| \hat{\mathbf{p}}_t - \mathbf{p}^*_t \bigr\|_2.
+  \label{eq:mee}
+\end{equation}
+The percentage improvement of the proposed method over a baseline $b$ is then
+defined as:
+\begin{equation}
+  \Delta_b = \frac{\text{MEE}_b - \text{MEE}_{\text{proposed}}}
+                  {\text{MEE}_b} \times 100\%.
+  \label{eq:improvement}
+\end{equation}
+
 % -------------------------------------------------------
 % SECTION IV -- PROPOSED METHOD
-% (to be added in Part 5)
 % -------------------------------------------------------
 \section{Proposed Method}\label{sec:method}
+
+The proposed localisation framework processes a single preprocessed 2D point cloud
+$\mathcal{P} = \{(x_i, y_i)\}_{i=1}^{N}$ through three sequential stages:
+(i)~adaptive noise suppression via a dynamically parameterised Savitzky-Golay
+filter, (ii)~environmental feature extraction via polar-domain derivative analysis,
+and (iii)~weighted angular position estimation. Fig.~\ref{fig:pipeline} illustrates
+the complete pipeline.
+
+\begin{figure}[!t]
+  \centering
+  \includegraphics[width=\columnwidth]{fig_pipeline}
+  \caption{Overview of the proposed three-stage localisation pipeline. A raw LiDAR
+    point cloud is converted to polar coordinates, adaptively smoothed, differentiated
+    to identify environmental features, and finally used to produce a refined sensor
+    position estimate.}
+  \label{fig:pipeline}
+\end{figure}
+
+% ---------------------------
+\subsection{Stage 1: Polar Coordinate Transformation}
+
+The Cartesian point set $\mathcal{P}$ is first converted to a polar representation
+centred on the geometric mean $\bar{\mathbf{p}} = (\bar{x}, \bar{y})$:
+\begin{equation}
+  r_i = \sqrt{(x_i - \bar{x})^2 + (y_i - \bar{y})^2}, \quad
+  \theta_i = \operatorname{atan2}(y_i - \bar{y},\; x_i - \bar{x}),
+  \label{eq:polar}
+\end{equation}
+yielding the polar set $\mathcal{Q} = \{(r_i, \theta_i)\}_{i=1}^{N}$.
+The data is then sorted by $\theta_i$ in ascending order to produce a
+continuously ordered angular sequence, which is a prerequisite for
+meaningful derivative computation in the next stage.
+
+% ---------------------------
+\subsection{Stage 2: Dynamic Savitzky-Golay Adaptive Smoothing}
+
+Raw LiDAR returns contain measurement noise that, if uncorrected, causes spurious
+extrema in derivative signals and corrupts feature detection. The Savitzky-Golay
+filter \cite{savitzky1964smoothing} smooths a discrete sequence by fitting
+overlapping polynomial windows via least squares, preserving signal shape
+characteristics such as local maxima and minima. For a window of length $w$
+and polynomial order $d$, the smoothed value at position $i$ is:
+\begin{equation}
+  \tilde{s}_i = \sum_{j=-m}^{m} c_j\, s_{i+j}, \qquad m = \tfrac{w-1}{2},
+  \label{eq:savgol}
+\end{equation}
+where $c_j$ are the Savitzky-Golay convolution coefficients determined by the
+least-squares polynomial fit and $s_i \in \{r_i, \theta_i\}$.
+
+\textbf{Dynamic parameter selection.} The key limitation of the standard
+Savitzky-Golay filter is that the window length $w$ and polynomial order $d$
+must be chosen in advance. Fixed parameters that suit one frame may over-smooth
+structural features or under-suppress noise in another. To address this, we
+introduce an automatic parameter optimisation procedure that selects $w^*$ and
+$d^*$ independently for each frame by minimising the mean squared error (MSE)
+between the smoothed signal and the original:
+\begin{equation}
+  (w^*, d^*) = \underset{w \in \mathcal{W},\; d \in \{2,3,4\}}{\arg\min}\;
+  \frac{1}{N} \sum_{i=1}^{N} \bigl(\tilde{s}_i^{(w,d)} - s_i\bigr)^2,
+  \label{eq:dynparam}
+\end{equation}
+where $\mathcal{W} = \{11, 13, 15, \ldots, w_{\max}\}$ is the set of odd window
+lengths up to a maximum $w_{\max}$ (set to $\min(51, N)$ in practice to avoid
+over-smoothing small point clouds). This optimisation is performed separately
+for both the radial sequence $\{r_i\}$ and the angular sequence $\{\theta_i\}$,
+yielding two independently tuned filters. Algorithm~\ref{alg:dynsg} summarises
+the procedure.
+
+\begin{algorithm}[!t]
+\caption{Dynamic Savitzky-Golay Parameter Selection}
+\label{alg:dynsg}
+\begin{algorithmic}
+\STATE \textbf{Input:} signal $\{s_i\}_{i=1}^{N}$, max window $w_{\max}$
+\STATE \textbf{Output:} optimal window $w^*$, polynomial order $d^*$
+\STATE $\text{best\_MSE} \leftarrow \infty$
+\FOR{each odd $w \in \{11, 13, \ldots, w_{\max}\}$}
+  \FOR{$d \in \{2, 3, 4\}$}
+    \STATE Apply Savitzky-Golay filter: $\tilde{s}_i \leftarrow \text{SG}(s, w, d)$
+    \STATE $\text{MSE} \leftarrow \frac{1}{N}\sum_i (\tilde{s}_i - s_i)^2$
+    \IF{$\text{MSE} < \text{best\_MSE}$}
+      \STATE $\text{best\_MSE} \leftarrow \text{MSE};\quad w^* \leftarrow w;\quad d^* \leftarrow d$
+    \ENDIF
+  \ENDFOR
+\ENDFOR
+\RETURN $w^*,\; d^*$
+\end{algorithmic}
+\end{algorithm}
+
+% ---------------------------
+\subsection{Stage 3: Polar-Domain Derivative Analysis}
+
+With the smoothed radial and angular sequences $\{\tilde{r}_i\}$ and
+$\{\tilde{\theta}_i\}$ in hand, we compute first- and second-order finite
+differences to locate regions of significant environmental change.
+
+\subsubsection{First-Order Derivatives}
+
+The first-order derivatives quantify the rate of change of range and angle
+with respect to the sorted sample index $i$:
+\begin{equation}
+  r'_i = \frac{\tilde{r}_{i+1} - \tilde{r}_{i-1}}{2}, \qquad
+  \theta'_i = \frac{\tilde{\theta}_{i+1} - \tilde{\theta}_{i-1}}{2}.
+  \label{eq:first_deriv}
+\end{equation}
+Large magnitudes in $|r'_i|$ indicate abrupt changes in measured range,
+corresponding to surface discontinuities such as building edges, kerbs, and
+vegetation boundaries.
+
+\subsubsection{Second-Order Derivatives}
+
+The second-order derivatives detect inflection points and regions of rapidly
+accelerating change, which correspond to corners and concave features:
+\begin{equation}
+  r''_i = \tilde{r}_{i+1} - 2\tilde{r}_i + \tilde{r}_{i-1}, \qquad
+  \theta''_i = \tilde{\theta}_{i+1} - 2\tilde{\theta}_{i} + \tilde{\theta}_{i-1}.
+  \label{eq:second_deriv}
+\end{equation}
+
+\subsubsection{Angular Wrap-Around Correction}
+
+Because $\theta \in (-\pi, \pi]$ is a cyclic variable, naive finite differences
+produce spurious large values at the $\pm\pi$ boundary. A correction is applied
+wherever $|\theta'_i| > \pi$:
+\begin{equation}
+  \theta'_i \leftarrow \theta'_i - 2\pi \cdot \operatorname{sign}(\theta'_i),
+  \label{eq:wraparound}
+\end{equation}
+ensuring derivative continuity across the angular wrap-around.
+
+% ---------------------------
+\subsection{Stage 4: Weighted Angular Position Estimation}
+
+The final stage fuses the geometric centre, the angular density distribution,
+and the derivative feature map into a refined sensor position estimate through
+three successive refinement steps.
+
+\textbf{Step 1 — Geometric centroid initialisation.}
+An initial position estimate is computed as the mean of all point coordinates:
+\begin{equation}
+  \hat{\mathbf{p}}^{(0)} = \frac{1}{N} \sum_{i=1}^{N} (x_i, y_i).
+  \label{eq:centroid}
+\end{equation}
+
+\textbf{Step 2 — Angular density refinement.}
+The angular distribution $\{\theta_i\}$ is discretised into a histogram
+$H(\phi)$ with bin width $\Delta\phi = 5°$. Peaks in $H(\phi)$ identify
+angular directions where point cloud returns are most densely concentrated,
+corresponding to nearby planar surfaces such as walls or building facades.
+The position estimate is shifted towards the weighted mean of these dominant
+angular directions:
+\begin{equation}
+  \hat{\mathbf{p}}^{(1)} = \hat{\mathbf{p}}^{(0)} +
+  \alpha \sum_{k \in \mathcal{K}}
+  H(\phi_k) \begin{pmatrix} \cos\phi_k \\ \sin\phi_k \end{pmatrix},
+  \label{eq:angularshift}
+\end{equation}
+where $\mathcal{K}$ is the set of peak bin indices and $\alpha$ is a
+normalisation constant scaled by the total point count.
+
+\textbf{Step 3 — Derivative-based feature correction.}
+Points with high combined derivative magnitude:
+\begin{equation}
+  D_i = |r'_i| + |r''_i| + |\theta'_i| + |\theta''_i|
+  \label{eq:deriv_magnitude}
+\end{equation}
+are identified as environmental feature anchors (edges, corners,
+discontinuities). The top $\kappa = 10\%$ of points ranked by $D_i$ form
+the feature set $\mathcal{F}$. The final estimate is computed as the
+weighted centroid of $\mathcal{F}$, with weights proportional to $D_i$:
+\begin{equation}
+  \hat{\mathbf{p}}^{(2)} = \frac{\sum_{i \in \mathcal{F}} D_i\, (x_i, y_i)}
+                                 {\sum_{i \in \mathcal{F}} D_i}.
+  \label{eq:featurecentroid}
+\end{equation}
+The output $\hat{\mathbf{p}}^{(2)}$ is the final sensor position estimate
+returned by the framework.
+
+% ---------------------------
+\subsection{Computational Complexity}
+
+The dominant cost is the dynamic parameter search in Stage~2. For a point cloud
+of $N$ points, $|\mathcal{W}|$ candidate window lengths, and three polynomial
+orders, the complexity is $O(|\mathcal{W}| \cdot N)$ per signal. Sorting in
+Stage~1 costs $O(N \log N)$, and all derivative and estimation steps are $O(N)$.
+The total per-frame complexity is therefore $O(|\mathcal{W}| \cdot N)$, which is
+linear in $N$ for a fixed search grid---substantially cheaper than the iterative
+$O(N^2)$ worst-case cost of ICP.
 
 % -------------------------------------------------------
 % SECTION V -- EXPERIMENTAL RESULTS
