@@ -286,8 +286,8 @@ frame without any prior scene information.
 \renewcommand{\arraystretch}{1.2}
 \begin{tabular}{lcccc}
 \toprule
-\textbf{Method} & \textbf{Map-free} & \textbf{GPS-free} & \textbf{Reg.-free}
-  & \textbf{Single-frame} \\
+\textbf{Method} & \textbf{Map-} & \textbf{GPS-} & \textbf{Reg.-} & \textbf{Single-} \\
+                & \textbf{free} & \textbf{free} & \textbf{free}  & \textbf{frame}   \\
 \midrule
 ICP \cite{besl1992method}              & \checkmark & \checkmark &            &            \\
 NDT \cite{biber2003normal}             & \checkmark & \checkmark &            &            \\
@@ -603,7 +603,7 @@ An initial position estimate is computed as the mean of all point coordinates:
 
 \textbf{Step 2 — Angular density refinement.}
 The angular distribution $\{\theta_i\}$ is discretised into a histogram
-$H(\phi)$ with bin width $\Delta\phi = 5°$. Peaks in $H(\phi)$ identify
+$H(\phi)$ with bin width $\Delta\phi = 5^{\circ}$. Peaks in $H(\phi)$ identify
 angular directions where point cloud returns are most densely concentrated,
 corresponding to nearby planar surfaces such as walls or building facades.
 The position estimate is shifted towards the weighted mean of these dominant
@@ -911,14 +911,176 @@ University of Southampton.
 
 % -------------------------------------------------------
 % REFERENCES
-% (to be finalised in Part 8)
 % -------------------------------------------------------
-\bibliographystyle{IEEEtran}
-\bibliography{references}
+\begin{thebibliography}{40}
+
+\bibitem{hussain2019autonomous}
+R.~Hussain and S.~Zeadally,
+``Autonomous cars: Research results, issues, and future challenges,''
+\textit{IEEE Commun.\ Surveys Tuts.}, vol.~21, no.~2, pp.~1275--1313, 2019.
+
+\bibitem{sae2021j3016}
+{SAE International},
+``Taxonomy and definitions for terms related to driving automation systems
+for on-road motor vehicles,'' SAE Standard J3016, Apr.\ 2021.
+
+\bibitem{luo2019localization}
+Q.~Luo, Y.~Cao, J.~Liu, and A.~Benslimane,
+``Localization and navigation in autonomous driving: Threats and
+countermeasures,''
+\textit{IEEE Wireless Commun.}, vol.~26, no.~4, pp.~38--45, Aug.\ 2019.
+
+\bibitem{kocic2018sensors}
+J.~Koci\'{c}, N.~Jovi\v{c}i\'{c}, and V.~Drndarevi\'{c},
+``Sensors and sensor fusion in autonomous vehicles,''
+in \textit{Proc.\ 26th Telecommun.\ Forum (TELFOR)}, 2018.
+
+\bibitem{besl1992method}
+P.~J.~Besl and N.~D.~McKay,
+``A method for registration of 3-D shapes,''
+\textit{IEEE Trans.\ Pattern Anal.\ Mach.\ Intell.}, vol.~14, no.~2,
+pp.~239--256, Feb.\ 1992.
+
+\bibitem{segal2009generalized}
+A.~V.~Segal, D.~Haehnel, and S.~Thrun,
+``Generalized-{ICP},''
+in \textit{Proc.\ Robot.\ Sci.\ Syst. (RSS)}, pp.~161--168, 2009.
+
+\bibitem{biber2003normal}
+P.~Biber and W.~Strasser,
+``The normal distributions transform: A new approach to laser scan matching,''
+in \textit{Proc.\ IEEE/RSJ IROS}, Las Vegas, NV, USA, 2003,
+pp.~2743--2748.
+
+\bibitem{takeuchi2006scan}
+E.~Takeuchi and T.~Tsubouchi,
+``A 3-D scan matching using improved 3-D normal distributions transform
+for mobile robotic mapping,''
+in \textit{Proc.\ IEEE/RSJ IROS}, Beijing, China, 2006, pp.~3068--3073.
+
+\bibitem{akai2017robust}
+N.~Akai, L.~Y.~Morales, E.~Takeuchi, Y.~Yoshihara, and Y.~Ninomiya,
+``Robust localization using 3D NDT scan matching with experimentally
+determined uncertainty and road marker matching,''
+in \textit{Proc.\ IEEE Intell.\ Veh.\ Symp.\ (IV)}, Los Angeles, CA,
+USA, 2017, pp.~1356--1363.
+
+\bibitem{levinson2010robust}
+J.~Levinson and S.~Thrun,
+``Robust vehicle localization in urban environments using probabilistic
+maps,''
+in \textit{Proc.\ IEEE ICRA}, Anchorage, AK, USA, 2010, pp.~4372--4378.
+
+\bibitem{wolcott2017robust}
+R.~W.~Wolcott and R.~M.~Eustice,
+``Robust {LIDAR} localization using multiresolution {Gaussian} mixture
+maps for autonomous driving,''
+\textit{Int.\ J.\ Robot.\ Res.}, vol.~36, no.~3, pp.~292--319, 2017.
+
+\bibitem{burgard2008map}
+W.~Burgard, O.~Brock, and C.~Stachniss,
+``Map-based precision vehicle localization in urban environments,''
+in \textit{Robot.\ Sci.\ Syst.\ III}, MIT Press, 2008, pp.~121--128.
+
+\bibitem{yoneda2014lidar}
+K.~Yoneda \textit{et al.},
+``{LiDAR} scan feature for localization with highly precise 3-D map,''
+in \textit{Proc.\ IEEE IV Symp.}, Dearborn, MI, USA, 2014,
+pp.~1345--1350.
+
+\bibitem{im2016vertical}
+J.-H.~Im, S.-H.~Im, and G.-I.~Jee,
+``Vertical corner feature based precise vehicle localization using 3D
+{LIDAR} in urban area,''
+\textit{Sensors}, vol.~16, no.~8, p.~1268, 2016.
+
+\bibitem{im2018extended}
+J.-H.~Im, S.-H.~Im, and G.-I.~Jee,
+``Extended line map-based precise vehicle localization using 3D {LIDAR},''
+\textit{Sensors}, vol.~18, no.~10, p.~3179, 2018.
+
+\bibitem{li2018hybrid}
+L.~Li, M.~Yang, C.~Wang, and B.~Wang,
+``Hybrid filtering framework based robust localization for industrial
+vehicles,''
+\textit{IEEE Trans.\ Ind.\ Informat.}, vol.~14, no.~3, pp.~941--950,
+Mar.\ 2018.
+
+\bibitem{schreiber2016vehicle}
+M.~Schreiber, H.~K\"{o}nigshof, A.-M.~Hellmund, and C.~Stiller,
+``Vehicle localization with tightly coupled {GNSS} and visual odometry,''
+in \textit{Proc.\ IEEE IV Symp.}, Gothenburg, Sweden, 2016,
+pp.~858--863.
+
+\bibitem{wang2016accurate}
+S.~Wang, Z.~Deng, and G.~Yin,
+``An accurate {GPS-IMU/DR} data fusion method for driverless car based
+on a set of predictive models and grid constraints,''
+\textit{Sensors}, vol.~16, no.~3, p.~280, 2016.
+
+\bibitem{aldibaja2017robust}
+M.~Aldibaja, N.~Suganuma, and K.~Yoneda,
+``Robust intensity-based localization method for autonomous driving on
+snow-wet road surface,''
+\textit{IEEE Trans.\ Ind.\ Informat.}, vol.~13, no.~5, 2017.
+
+\bibitem{ward2016vehicle}
+E.~Ward and J.~Folkesson,
+``Vehicle localization with low cost radar sensors,''
+in \textit{Proc.\ IEEE IV Symp.}, Gothenburg, Sweden, 2016,
+pp.~864--870.
+
+\bibitem{gwon2017generation}
+G.-P.~Gwon, W.-S.~Hur, S.-W.~Kim, and S.-W.~Seo,
+``Generation of a precise and efficient lane-level road map for
+intelligent vehicle systems,''
+\textit{IEEE Trans.\ Veh.\ Technol.}, vol.~66, no.~6,
+pp.~4517--4533, Jun.\ 2017.
+
+\bibitem{sun2006on}
+Z.~Sun, G.~Bebis, and R.~Miller,
+``On-road vehicle detection: A review,''
+\textit{IEEE Trans.\ Pattern Anal.\ Mach.\ Intell.}, vol.~28, no.~5,
+pp.~694--711, May 2006.
+
+\bibitem{savitzky1964smoothing}
+A.~Savitzky and M.~J.~E.~Golay,
+``Smoothing and differentiation of data by simplified least squares
+procedures,''
+\textit{Anal.\ Chem.}, vol.~36, no.~8, pp.~1627--1639, 1964.
+
+\bibitem{geiger2012kitti}
+A.~Geiger, P.~Lenz, and R.~Urtasun,
+``Are we ready for autonomous driving? The {KITTI} vision benchmark
+suite,''
+in \textit{Proc.\ IEEE CVPR}, Providence, RI, USA, 2012, pp.~3354--3361.
+
+\bibitem{dosovitskiy2017carla}
+A.~Dosovitskiy, G.~Ros, F.~Codevilla, A.~Lopez, and V.~Koltun,
+``{CARLA}: An open urban driving simulator,''
+in \textit{Proc.\ Conf.\ Robot Learning (CoRL)}, pp.~1--16, 2017.
+
+\bibitem{kato2015autoware}
+S.~Kato \textit{et al.},
+``An open approach to autonomous vehicles,''
+\textit{IEEE Micro}, vol.~35, no.~6, pp.~60--68, Nov.\ 2015.
+
+\end{thebibliography}
 
 % -------------------------------------------------------
 % AUTHOR BIOGRAPHY
-% (to be added in Part 8)
 % -------------------------------------------------------
+\newpage
+
+\begin{IEEEbiographynophoto}{Ketan Ingale}
+received the B.E.\ degree in Electronics and Telecommunication Engineering
+from the University of Mumbai, India, in 2022, and the M.Sc.\ degree in
+Data Science from the University of Southampton, Southampton, U.K., in 2024.
+His research interests include autonomous vehicle localisation, LiDAR-based
+perception, 3D point cloud processing, and applied machine learning for
+intelligent transportation systems. His dissertation on LiDAR-based
+localisation for autonomous vehicles in GPS-denied environments, supervised
+by Dr.\ Daniel Clark, forms the basis of this paper.
+\end{IEEEbiographynophoto}
 
 \end{document}
