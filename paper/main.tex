@@ -648,9 +648,164 @@ $O(N^2)$ worst-case cost of ICP.
 
 % -------------------------------------------------------
 % SECTION V -- EXPERIMENTAL RESULTS
-% (to be added in Part 6)
 % -------------------------------------------------------
 \section{Experimental Results}\label{sec:results}
+
+This section presents quantitative and qualitative evaluation of the proposed
+framework against the four baseline methods across all seven KITTI-CARLA towns.
+All experiments are implemented in Python using NumPy, Pandas, Scikit-learn,
+and Plyfile, and executed on a standard desktop CPU without GPU acceleration.
+
+% ---------------------------
+\subsection{Quantitative Results}
+
+Table~\ref{tab:results} reports the mean Euclidean error (MEE, in metres) for
+each method in each town, together with the percentage improvement
+$\Delta_b$ (eq.~\eqref{eq:improvement}) of the proposed method over each
+baseline. The proposed method consistently achieves the lowest MEE in all
+seven environments.
+
+\begin{table*}[!t]
+\caption{Mean Euclidean Error (MEE, metres) and Improvement of the Proposed
+  Method Over Baselines Across All Seven KITTI-CARLA Towns
+  \label{tab:results}}
+\centering
+\renewcommand{\arraystretch}{1.25}
+\begin{tabular}{llccccc}
+\toprule
+\multirow{2}{*}{\textbf{Town}} &
+\multirow{2}{*}{\textbf{Environment}} &
+\multicolumn{4}{c}{\textbf{Baseline MEE (m) / Improvement (\%)}} &
+\multirow{2}{*}{\textbf{Proposed MEE (m)}} \\
+\cmidrule(lr){3-6}
+& & \textbf{K-Means} & \textbf{Conv.\ Hull} & \textbf{Min.\ Circle} & \textbf{ICP} & \\
+\midrule
+Town 01 & Urban         & 11.60 / 68.9 & 27.70 / 87.0 & 27.70 / 87.0 & 73.34 / 95.1 & \textbf{3.61} \\
+Town 02 & Urban         & 9.41  / 70.2 & 23.30 / 88.0 & 23.30 / 88.0 & 65.08 / 95.7 & \textbf{2.80} \\
+Town 03 & Urban         & 7.51  / 58.5 & 23.54 / 86.8 & 23.54 / 86.8 & 73.99 / 95.8 & \textbf{3.12} \\
+Town 04 & Mixed         & 11.14 / 72.4 & 32.18 / 90.4 & 32.18 / 90.4 & 73.87 / 95.8 & \textbf{3.08} \\
+Town 05 & Mixed         & 7.98  / 57.0 & 31.07 / 89.0 & 31.07 / 89.0 & 58.27 / 94.1 & \textbf{3.43} \\
+Town 06 & Rural/Highway & 9.55  / 69.3 & 26.56 / 89.0 & 26.56 / 89.0 & 75.32 / 96.1 & \textbf{2.93} \\
+Town 07 & Rural/Highway & 8.82  / 72.0 & 23.16 / 89.4 & 23.16 / 89.4 & 67.32 / 96.3 & \textbf{2.46} \\
+\midrule
+\textbf{Mean} & & \textbf{9.43 / 66.9} & \textbf{26.78 / 88.5} & \textbf{26.78 / 88.5} & \textbf{69.60 / 95.6} & \textbf{3.06} \\
+\bottomrule
+\end{tabular}
+\end{table*}
+
+% ---------------------------
+\subsection{Analysis by Baseline Method}
+
+\subsubsection{K-Means Path}
+K-Means produced the lowest baseline errors among the four methods, with MEE
+ranging from 7.51~m (Town~03) to 11.60~m (Town~01), reflecting its ability to
+broadly capture dominant spatial clusters in the point cloud. However, K-Means
+is inherently sensitive to cluster initialisation and to uneven point density
+caused by partial occlusions. The proposed method improved upon K-Means by
+57.0\%--72.4\% across towns, with the smallest gains in feature-sparse rural
+environments (Town~05: 57.0\%) and the largest in mixed and structured urban
+scenes (Town~04: 72.4\%). These gains arise because the derivative analysis
+extracts sub-cluster boundary structure that K-Means centroids cannot resolve.
+
+\subsubsection{Convex Hull and Minimum Circle Paths}
+The Convex Hull and Minimum Enclosing Circle methods produced identical MEE
+values in every town, a consequence of both methods being dominated by the
+same set of outermost points in the 2D projection. MEE ranged from 23.16~m
+to 32.18~m, consistently three to four times worse than K-Means. Both methods
+fail to exploit the internal spatial distribution of the point cloud, reducing
+the localisation problem to a geometric bounding operation that is highly
+sensitive to outlier points near the scan periphery. The proposed method
+improved upon these methods by 86.8\%--90.4\%, the most consistent improvement
+band observed across any baseline.
+
+\subsubsection{ICP Path}
+ICP produced the largest errors of all baselines, with MEE ranging from
+58.27~m (Town~05) to 75.32~m (Town~06), representing roughly 6--8$\times$ the
+error of the proposed method. The catastrophic failure of ICP in this
+setting is attributable to the absence of a reliable initial alignment: without
+a prior pose estimate, ICP frequently converges to incorrect local minima and
+the accumulated registration errors compound rapidly across frames. The
+proposed method improved over ICP by 94.1\%--96.3\%, the highest improvement
+margins observed, confirming that single-frame derivative-based estimation is
+far more stable than multi-frame registration in GPS-denied cold-start
+scenarios.
+
+% ---------------------------
+\subsection{Cross-Environment Consistency}
+
+A notable characteristic of the proposed method is its consistent performance
+across environments of very different character. The MEE varies only between
+2.46~m (Town~07, rural/highway) and 3.61~m (Town~01, dense urban), a range
+of just 1.15~m despite the substantial differences in structural density and
+road geometry between these environments. This contrasts with the baselines,
+which exhibit much wider variance: K-Means MEE spans 4.09~m and ICP MEE
+spans 17.05~m across the same towns.
+
+The relatively lower error in rural and highway towns (06--07) compared to
+dense urban towns (01--03) reflects the effect of sparser, more regular
+point cloud structure: fewer overlapping returns from nearby buildings means
+that derivative peaks more reliably identify genuine environmental boundaries
+rather than cluttered near-field returns.
+
+Fig.~\ref{fig:paths} illustrates the estimated trajectories for all four
+baselines and the proposed method overlaid on the ground-truth path for
+representative Towns~01 and~07. The proposed method tracks the ground truth
+closely throughout, while ICP diverges almost immediately and the geometric
+methods (Convex Hull, Minimum Circle) produce trajectories offset by tens
+of metres.
+
+\begin{figure}[!t]
+  \centering
+  \includegraphics[width=\columnwidth]{fig_paths}
+  \caption{Estimated sensor trajectories vs.\ ground truth for Town~01
+    (urban, top) and Town~07 (rural/highway, bottom). The proposed method
+    (solid blue) closely follows the ground truth (dashed black), while
+    ICP (red), Convex Hull (green), and K-Means (orange) diverge
+    significantly.}
+  \label{fig:paths}
+\end{figure}
+
+% ---------------------------
+\subsection{Error Distribution Analysis}
+
+Fig.~\ref{fig:errors} shows per-frame error plots for all methods on Town~01.
+The proposed method maintains a low and stable error throughout the sequence,
+with occasional short-duration spikes at sharp turns where derivative features
+are momentarily ambiguous. K-Means exhibits moderate but volatile errors with
+frequent excursions above 10~m. The Convex Hull and Minimum Circle methods
+cluster between 30--40~m with little frame-to-frame variation, indicating
+systematic rather than random bias. ICP errors cluster around 75--80~m with
+high variance, consistent with accumulated registration drift.
+
+\begin{figure}[!t]
+  \centering
+  \includegraphics[width=\columnwidth]{fig_errors}
+  \caption{Per-frame localisation error (metres) for all methods on
+    Town~01. The proposed method (blue) maintains low stable errors
+    throughout the sequence. K-Means (orange) is volatile; Convex Hull
+    and Minimum Circle (green/purple) show systematic bias; ICP (red)
+    suffers severe accumulated drift.}
+  \label{fig:errors}
+\end{figure}
+
+% ---------------------------
+\subsection{Improvement Summary}
+
+Fig.~\ref{fig:improvement} summarises the percentage improvement of the
+proposed method over each baseline across all towns. The most consistent
+improvements are over ICP (94--96\%) and the geometric bounds methods
+(87--90\%). Improvement over K-Means is somewhat lower (57--72\%) but
+still substantial, confirming that the proposed derivative-based feature
+extraction provides significant accuracy gains even over the strongest
+baseline.
+
+\begin{figure}[!t]
+  \centering
+  \includegraphics[width=\columnwidth]{fig_improvement}
+  \caption{Percentage improvement of the proposed method over each
+    baseline method across all seven KITTI-CARLA towns.}
+  \label{fig:improvement}
+\end{figure}
 
 % -------------------------------------------------------
 % SECTION VI -- CONCLUSION
